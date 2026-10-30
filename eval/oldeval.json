@@ -1,0 +1,16 @@
+Eval summary
+Endpoint         Cases   Pass   Fail
+verify_claim         5      2      3
+verify_hadith       22     19      1
+
+Expected-ref recall@5: 11/12 (91.7%)
+Status checks: 21 passed, 4 failed
+Unverified cases: 10
+Known failures: 2
+Placeholder cases skipped: 1
+
+Failures
+#12 verify_hadith: expected match / got unverified; expected refs=['bukhari:3948']; actual refs=[]
+#24 verify_claim: expected no_citations / got cited; expected refs=[]; actual refs=['bukhari:1503', 'bukhari:1504', 'bukhari:1507', 'bukhari:1512', 'muslim:2278', 'muslim:2279', 'muslim:2282', 'abudawud:1662', 'abudawud:2216', 'muslim:5162']
+#25 verify_claim: expected no_citations / got cited; expected refs=[]; actual refs=['quran:4:25', 'quran:4:23', 'quran:24:32', 'quran:4:24', 'quran:4:127', 'quran:24:33', 'quran:24:60', 'bukhari:5133', 'abudawud:2121', 'muslim:3482', 'bukhari:5158', 'muslim:3636', 'muslim:3635', 'bukhari:5090']
+#26 verify_claim: expected no_citations / got cited; expected refs=[]; actual refs=['bukhari:1969', 'bukhari:2001', 'bukhari:1999', 'bukhari:1972']

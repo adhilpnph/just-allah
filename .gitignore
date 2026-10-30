@@ -1,0 +1,28 @@
+
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# source datasets (large, licenses unconfirmed, kept local)
+data/
+*.db
+*.sqlite
+
+# eval output files
+eval/*.txt
+
+# editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

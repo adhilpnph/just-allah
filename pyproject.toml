@@ -1,0 +1,23 @@
+[project]
+name = "just-allah-backend"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.14",
+    "fastapi[standard]>=0.159.1",
+    "openai>=3.40.0",
+    "pgvector>=0.3.0",
+    "psycopg2-binary>=2.9",
+    "python-dotenv>=1.0",
+    "sentence-transformers>=6.2.0",
+    "sqlalchemy>=2.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
