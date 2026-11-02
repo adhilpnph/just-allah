@@ -9,7 +9,8 @@ from app.schemas import VerifyRequest
 
 
 def _verify(request: VerifyRequest) -> Any:
-    return asyncio.run(verify_router.verify(request))
+    endpoint = getattr(verify_router.verify, "__wrapped__", verify_router.verify)
+    return asyncio.run(endpoint(None, request))
 
 
 def _passage(ref: str, similarity: float = 0.93) -> dict[str, Any]:

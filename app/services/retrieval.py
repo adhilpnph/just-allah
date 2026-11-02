@@ -44,6 +44,7 @@ def _arabic_text_matches(session, question: str, k: int) -> list:
 def search(question: str, kind: str, k: int = 5):
     query_embedding = embed_query(question)
     with SessionLocal() as session:
+        session.execute(text("SET LOCAL hnsw.ef_search = 200"))
         rows = session.execute(
             text(
                 "SELECT ref, kind, collection, arabic, english, narrator, grade, graded_by, grades, url "
@@ -69,6 +70,7 @@ def search(question: str, kind: str, k: int = 5):
 def search_with_similarity(question: str, kind: str, k: int = 5):
     query_embedding = embed_query(question)
     with SessionLocal() as session:
+        session.execute(text("SET LOCAL hnsw.ef_search = 200"))
         rows = session.execute(
             text(
                 """

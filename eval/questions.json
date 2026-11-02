@@ -335,5 +335,33 @@
   "expected_status":"unverified",
   "expected_refs":[],
   "expected_grades":[],
+  "known_failure":false},
+
+  {"id":43,
+  "endpoint":"ask",
+  "input":"What do the sources say about women getting married by 18?",
+  "expected_any_of":["bukhari:6092","abudawud:4990","bukhari:3518"],
+  "checks":["includes_any_expected_ref","refs_exist_in_db","every_ref_has_card"],
+  "known_failure":false},
+
+  {"id":44,
+  "endpoint":"ask",
+  "input":"What did the prophet say about jokes?",
+  "expected_any_of":["bukhari:6092","abudawud:4990","bukhari:3518"],
+  "checks":["includes_any_expected_ref","refs_exist_in_db","every_ref_has_card"],
+  "known_failure":false},
+
+  {"id":45,
+  "endpoint":"ask",
+  "input":"What does Islam say about Prophet Lut?",
+  "expected_any_of":["quran:7:80","quran:26:165","quran:27:54","quran:29:28"],
+  "checks":["includes_any_expected_ref","refs_exist_in_db","every_ref_has_card"],
+  "known_failure":false},
+
+  {"id":46,
+  "endpoint":"ask",
+  "input":"Prophet Ibrahim",
+  "expected_any_of":["quran:2:124","quran:6:74","quran:14:35","quran:37:99"],
+  "checks":["includes_any_expected_ref","refs_exist_in_db","every_ref_has_card"],
   "known_failure":false}
 ]

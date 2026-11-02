@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
-import re
-
+import logging
 import os
+import re
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -17,6 +17,7 @@ from app.models import Passage
 from app.services.retrieval import search, search_with_similarity
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 EventType = Literal["token", "card", "done"]
 
@@ -58,13 +59,17 @@ def _prompt(question: str, passages: Iterable[dict[str, Any]]) -> str:
     return (
         "Answer using only the source passages below. Start with Quran passages, then "
         "hadith passages. Write short plain-language prose stating only what a cited passage "
-        "directly says. You may state a passage's explicit content in plain words; do not state anything that "
+        "directly says. Cite a passage only if it directly addresses the question; ignore the other "
+        "retrieved passages and do not describe them. You may state a passage's explicit content in plain words; "
+        "do not state anything that "
         "the passage only implies. Do not use conclusions, inference words, or reasoning such "
         "as therefore, this shows, this means, or these narrations indicate. Do not use "
         "\"therefore\"-style conclusions. Do not weigh or "
         "rank passages. Do not state religious verdicts that the passage does not directly state. "
-        "If no passage directly addresses the question, write one sentence saying the sources do not address "
-        "it and cite no passage. Do not describe loosely related passages. Never quote source "
+        "If no retrieved passage directly addresses the question, write one sentence saying the retrieved "
+        "sources do not state this, without claiming anything about Islam beyond the database. Never write "
+        "'Islam does not mention'. State only what a cited passage says. Cite no passage in this case. "
+        "Never quote source "
         "wording or place source wording in quotation marks. Add inline markers exactly like "
         "[quran:2:153], using ASCII square brackets and one ref per bracket. Use only refs "
         "supplied below. Never mention grades or graders. Never write, invent, complete, or "
@@ -86,17 +91,111 @@ def _retrieval_query(question: str) -> str:
     return normalized or question
 
 
-def retrieve(question: str) -> list[dict[str, Any]]:
-    retrieval_question = _retrieval_query(question)
+async def _request_rewrite_search_phrases(question: str) -> list[str]:
+    model = os.getenv("REWRITE_MODEL")
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    base_url = os.getenv("OPENROUTER_BASE_URL")
+    if not model:
+        raise RuntimeError("REWRITE_MODEL is not set")
+    if not api_key:
+        raise RuntimeError("OPENROUTER_API_KEY is not set in backend/.env")
+    if not base_url:
+        raise RuntimeError("OPENROUTER_BASE_URL is not set in backend/.env")
+
+    async with AsyncOpenAI(api_key=api_key, base_url=base_url) as client:
+        response = await client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Return 3 to 5 short search phrases made only of the names and nouns "
+                        "the question is about, using English spellings from the translations. "
+                        "For abstract topics, include 1 or 2 close synonyms. Omit generic words "
+                        "that occur in most passages, such as Prophet when the question asks "
+                        "what the Prophet said, and Islam. Do not add people or topics the "
+                        "question did not name. Return JSON only in the form "
+                        "{\"phrases\": [\"phrase\", ...]}."
+                    ),
+                },
+                {"role": "user", "content": question},
+            ],
+            temperature=0,
+            max_tokens=120,
+        )
+
+    content = response.choices[0].message.content or ""
+    result = json.loads(content)
+    return [
+        phrase.strip()
+        for phrase in result.get("phrases", [])
+        if isinstance(phrase, str) and phrase.strip()
+    ][:5]
+
+
+async def _rewrite_search_phrases(question: str) -> list[str]:
+    try:
+        phrases = await _request_rewrite_search_phrases(question)
+    except Exception as error:
+        reason = " ".join(str(error).splitlines())
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if api_key:
+            reason = reason.replace(api_key, "[redacted]")
+        logger.warning(
+            "Ask rewrite fallback to original question: %s: %s",
+            type(error).__name__,
+            reason,
+        )
+        return [question]
+
+    if len(phrases) < 3:
+        logger.warning(
+            "Ask rewrite fallback to original question: rewrite returned fewer than 3 phrases"
+        )
+        return [question]
+    return phrases
+
+
+def retrieve(
+    question: str, search_phrases: list[str] | None = None
+) -> list[dict[str, Any]]:
+    phrases = search_phrases or [question]
+    best_by_ref: dict[str, dict[str, Any]] = {}
+    seeded_refs_by_kind: dict[str, set[str]] = {"quran": set(), "hadith": set()}
+    for phrase in phrases:
+        retrieval_question = _retrieval_query(phrase)
+        for kind in ("quran", "hadith"):
+            candidates = search_with_similarity(retrieval_question, kind, k=10)
+            for passage in candidates[:2]:
+                seeded_refs_by_kind[kind].add(str(passage["ref"]))
+            for passage in candidates:
+                ref = passage["ref"]
+                current = best_by_ref.get(ref)
+                similarity = float(passage.get("similarity", 0.0))
+                if current is None or similarity > float(current.get("similarity", 0.0)):
+                    best_by_ref[ref] = passage
+
     passages: list[dict[str, Any]] = []
     for kind in ("quran", "hadith"):
-        candidates = search_with_similarity(retrieval_question, kind, k=10)
+        kind_passages = [
+            passage for passage in best_by_ref.values()
+            if passage.get("kind") == kind
+        ]
         ranked = sorted(
-            candidates,
+            (passage for passage in kind_passages
+             if str(passage["ref"]) in seeded_refs_by_kind[kind]),
+            key=lambda passage: float(passage.get("similarity", 0.0)),
+            reverse=True,
+        )[:5]
+        selected_refs = {str(passage["ref"]) for passage in ranked}
+        remaining = sorted(
+            (passage for passage in kind_passages
+             if str(passage["ref"]) not in selected_refs),
             key=lambda passage: float(passage.get("similarity", 0.0)),
             reverse=True,
         )
-        passages.extend(ranked[:5])
+        ranked.extend(remaining[: 5 - len(ranked)])
+        passages.extend(ranked)
     return passages
 
 
@@ -203,7 +302,8 @@ async def validated_events(
 
 
 async def stream_answer(question: str) -> AsyncIterator[StreamEvent]:
-    passages = await run_in_threadpool(retrieve, question)
+    search_phrases = await _rewrite_search_phrases(question)
+    passages = await run_in_threadpool(retrieve, question, search_phrases)
     emitted = False
     try:
         async for event in validated_events(

@@ -26,3 +26,6 @@ eval/*.txt
 .idea/
 .DS_Store
 Thumbs.db
+eval_*.txt
+*.decoded.txt
+eval/*.txt

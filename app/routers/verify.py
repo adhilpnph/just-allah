@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from difflib import SequenceMatcher
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from starlette.concurrency import run_in_threadpool
 
 from app.schemas import PassageCard, VerifyRequest, VerifyResponse
@@ -13,6 +13,7 @@ from app.services.llm import (
     filter_supported_claim_passages,
     summarize_claim,
 )
+from app.rate_limit import VERIFY_LIMIT_DEFAULT, endpoint_limits, limiter
 
 router = APIRouter()
 VERIFY_MATCH_THRESHOLD = 0.85
@@ -91,14 +92,17 @@ def _has_lexical_evidence(query: str, passage: dict) -> bool:
 
 
 @router.post("/verify", response_model=VerifyResponse)
-async def verify(request: VerifyRequest) -> VerifyResponse:
-    if request.mode == "hadith":
-        results = await run_in_threadpool(retrieve_hadith_with_similarity, request.text)
+@limiter.limit(endpoint_limits("RATE_LIMIT_VERIFY", VERIFY_LIMIT_DEFAULT))
+async def verify(request: Request, body: VerifyRequest) -> VerifyResponse:
+    request_body = body
+    del request
+    if request_body.mode == "hadith":
+        results = await run_in_threadpool(retrieve_hadith_with_similarity, request_body.text)
         matched = max(results, key=lambda row: float(row["similarity"]), default=None)
         if (
             matched is None
             or float(matched["similarity"]) < VERIFY_MATCH_THRESHOLD
-            or not _has_lexical_evidence(request.text, matched)
+            or not _has_lexical_evidence(request_body.text, matched)
         ):
             return VerifyResponse(
                 mode="hadith",
@@ -115,8 +119,8 @@ async def verify(request: VerifyRequest) -> VerifyResponse:
             similarity=matched["similarity"],
         )
 
-    sources = await run_in_threadpool(lookup_claim_passages, request.text)
-    supported_sources = await filter_supported_claim_passages(request.text, sources)
+    sources = await run_in_threadpool(lookup_claim_passages, request_body.text)
+    supported_sources = await filter_supported_claim_passages(request_body.text, sources)
     if not supported_sources:
         return VerifyResponse(
             mode="claim",
@@ -124,7 +128,7 @@ async def verify(request: VerifyRequest) -> VerifyResponse:
             answer="The sources do not address this claim.",
             passages=[],
         )
-    answer, cited_passages = await summarize_claim(request.text, supported_sources)
+    answer, cited_passages = await summarize_claim(request_body.text, supported_sources)
     return VerifyResponse(
         mode="claim",
         status="claim",
