@@ -30,8 +30,13 @@ Just Allah is a source-finder over the Quran and the hadith collections Bukhari,
 
 This project is not hosted. The embedding model runs inside the backend and needs more memory than free hosting tiers provide, so a live demo is not available. The recording below shows the app running locally.
 
-<img width="1117" height="665" alt="Screenshot 2026-11-10 111708" src="https://github.com/user-attachments/assets/bc8be3f5-3ba0-423e-86ce-bfd714bab51d" />
-
+<img width="1471" height="955" alt="Screenshot 2026-11-10 110800" src="https://github.com/user-attachments/assets/30c61531-231a-4ba0-8d42-dbf121213f65" />
+<img width="1917" height="800" alt="Screenshot 2026-11-10 110847" src="https://github.com/user-attachments/assets/c7e6d64a-70bc-4ce4-a755-c42f9e115eae" />
+<img width="1917" height="1026" alt="Screenshot 2026-11-10 110928" src="https://github.com/user-attachments/assets/a9d17329-1e73-4d25-94fb-7c17af6312ae" />
+<img width="1917" height="1018" alt="Screenshot 2026-11-10 110936" src="https://github.com/user-attachments/assets/1fb67ad4-c848-4fa6-84f5-16b47dc222c5" />
+<img width="1915" height="1018" alt="Screenshot 2026-11-10 111219" src="https://github.com/user-attachments/assets/db14f422-19f2-4393-81cf-5e468d19097f" />
+<img width="1097" height="773" alt="Screenshot 2026-11-10 111229" src="https://github.com/user-attachments/assets/9e550320-f381-4128-896a-6a3d6478c951" />
+<img width="1117" height="665" alt="Screenshot 2026-11-10 111708" src="https://github.com/user-attachments/assets/09616b7f-369c-41b1-a84a-325339ea326a" />
 
 To run it yourself, see Setup.
 
