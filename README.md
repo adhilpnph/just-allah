@@ -30,6 +30,7 @@ Just Allah is a source-finder over the Quran and the hadith collections Bukhari,
 
 This project is not hosted. The embedding model runs inside the backend and needs more memory than free hosting tiers provide, so a live demo is not available. The recording below shows the app running locally.
 
+<img width="1117" height="665" alt="Screenshot 2026-11-10 111708" src="https://github.com/user-attachments/assets/bc8be3f5-3ba0-423e-86ce-bfd714bab51d" />
 
 
 To run it yourself, see Setup.
