@@ -26,6 +26,14 @@ Just Allah is a source-finder over the Quran and the hadith collections Bukhari,
 
 **Data layer:** Supabase Postgres stores the passages and 384-dimensional vectors. `intfloat/multilingual-e5-small` creates embeddings. The Alembic migration installs `pgvector` and defines the hybrid search function, which combines vector and English full-text ranks using reciprocal-rank fusion.
 
+## Demo
+
+This project is not hosted. The embedding model runs inside the backend and needs more memory than free hosting tiers provide, so a live demo is not available. The recording below shows the app running locally.
+
+
+
+To run it yourself, see Setup.
+
 ## Setup
 
 Prerequisites: Python 3.13 or later, `uv`, a Postgres database with `pgvector`, the local source files described below, and provider credentials for LLM answers. From this backend directory:
@@ -60,7 +68,7 @@ uv run python scripts/ingest_hadith.py abudawud
 The Quran ingestion script reads `app/quran.db/quran.db`. Hadith ingestion reads the matching Arabic and English JSON files in `data/hadith/`. Start the API from this directory with:
 
 ```sh
-python -m uvicorn app.main:app --reload
+uv run python -m uvicorn app.main:app --reload
 ```
 
 ## Evaluation
